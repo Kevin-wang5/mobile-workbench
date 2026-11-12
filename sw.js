@@ -3,9 +3,9 @@
 // 按部署路径隔离缓存，避免影响同一 GitHub 用户下的其他项目。
 const BASE = new URL("./", self.location.href);
 const CACHE_PREFIX = `buer-mobile-workbench:${BASE.pathname}:`;
-const CACHE_NAME = `${CACHE_PREFIX}v1`;
+const CACHE_NAME = `${CACHE_PREFIX}v2`;
 const SHELL = ["./", "./index.html", "./style.css", "./app.js", "./manifest.webmanifest",
-  "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"].map((path) => new URL(path, BASE).href);
+  "./icon-192.png?v=gear-v2", "./icon-512.png?v=gear-v2", "./icon-maskable-512.png?v=gear-v2"].map((path) => new URL(path, BASE).href);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)));
