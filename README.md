@@ -1,2 +1,13 @@
-# mobile-workbench
-Mobile offline calendar, tasks and personal ledger with local storage and JSON backup.
+# 不二的工作台手机版
+
+独立的纯静态 PWA。包含日历、待办、记账、分类统计、JSON 导入导出、离线缓存和持久存储申请。
+
+使用独立 IndexedDB 数据库 `buer-mobile-workbench`。数据在当前设备保存。可导入原项目导出的 JSON。导入完整校验后，在同一个事务内替换数据。
+
+通过 HTTPS 打开并等待离线资源就绪。iPhone 建议用 Safari 添加到主屏幕，从图标进入后再录入或导入正式数据。安卓可通过 Edge 或 Chrome 安装。
+
+记账页提供导入导出和存储状态。导出后请确认文件保存成功。建议每周备份。换设备时通过 JSON 迁移。
+
+部署时将此目录文件发布到独立 GitHub Pages 仓库根目录，所有资源路径均为相对路径。修改离线资源后需递增 sw.js 的缓存版本。页面检测到更新会提示，点击后启用新缓存并刷新。
+
+本地可用 HTTP 服务预览，localhost 支持 Service Worker。手机最终通过 HTTPS 访问。已测试安卓 Edge 的最小 PWA，完整应用仍需手机验收和 iPhone 实机验证。
