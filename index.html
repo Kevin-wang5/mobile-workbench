@@ -60,6 +60,10 @@
 
         <!-- ① 记账 -->
         <section class="view" id="view-ledger">
+            <section class="card balance-card">
+                <button type="button" id="balanceBtn" aria-label="修改当前余额"><span>余额</span><strong id="balanceAmount">¥0.00</strong></button>
+                <div id="balanceChanges" aria-live="polite"></div>
+            </section>
             <form class="card record-form" id="recordForm" novalidate>
                 <div class="field">
                     <label for="amount">金额（元）</label>
@@ -102,21 +106,7 @@
                 <ul id="recordList" class="record-list"></ul>
             </section>
 
-            <div class="actions">
-                <button class="btn btn-secondary" id="exportBtn" type="button">导出 JSON</button>
-                <button class="btn btn-secondary" id="importBtn" type="button">导入 JSON</button>
-                <input id="importFile" type="file" accept=".json,application/json" hidden>
-            </div>
 
-            <section class="card">
-                <h2>数据与备份</h2>
-                <p id="backupHint" class="footnote">建议定期导出到文件</p>
-                <p id="backupReminder" class="footnote is-hidden">已有一周未发起备份，建议导出并保存到文件。</p>
-                <p id="storageStatus" class="footnote" role="status">正在检查存储状态</p>
-                <button class="btn btn-secondary" id="persistBtn" type="button">申请持久存储</button>
-                <p class="footnote" id="offlineHint">正在准备离线资源</p>
-                <p class="footnote">数据保存在此设备。换手机时，请先导出 JSON，再在新手机导入。iPhone 建议先添加到主屏幕，再从图标进入使用。</p>
-            </section>
         </section>
 
         <!-- ② 日历 -->
@@ -142,6 +132,21 @@
                 </div>
                 <ul id="dayTaskList" class="task-list"></ul>
                 <div class="day-records" id="dayRecords"></div>
+            </section>
+            <div class="actions">
+                <button class="btn btn-secondary" id="exportBtn" type="button">导出 JSON</button>
+                <button class="btn btn-secondary" id="importBtn" type="button">导入 JSON</button>
+                <input id="importFile" type="file" accept=".json,application/json" hidden>
+            </div>
+
+            <section class="card">
+                <h2>数据与备份</h2>
+                <p id="backupHint" class="footnote">建议定期导出到文件</p>
+                <p id="backupReminder" class="footnote is-hidden">已有一周未发起备份，建议导出并保存到文件。</p>
+                <p id="storageStatus" class="footnote" role="status">正在检查存储状态</p>
+                <button class="btn btn-secondary" id="persistBtn" type="button">申请持久存储</button>
+                <p class="footnote" id="offlineHint">正在准备离线资源</p>
+                <p class="footnote">数据保存在此设备。换手机时，请先导出 JSON，再在新手机导入。iPhone 建议先添加到主屏幕，再从图标进入使用。</p>
             </section>
         </section>
 

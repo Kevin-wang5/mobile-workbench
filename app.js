@@ -14,7 +14,13 @@ const TYPE_META = {
 const PRIORITY_LABEL = { high: "高", normal: "中", low: "低" };
 const WEEKDAY_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
+const EXTRA_EXPENSES = [
+    { id: "shopping", name: "购物", kind: "expense", color: "#9471BD" },
+    { id: "romance", name: "恋爱", kind: "expense", color: "#CB6683" }
+];
+
 const DEFAULT_CATEGORIES = [
+    ...EXTRA_EXPENSES,
     { id: "food", name: "餐饮", kind: "expense", color: "#E86A5E" },
     { id: "transport", name: "交通", kind: "expense", color: "#4A90D9" },
     { id: "study", name: "学习用品", kind: "expense", color: "#7A6FD0" },
@@ -257,9 +263,10 @@ function recordsOn(date) {
 /* ---------- 本地数据读写 ---------- */
 
 async function refreshFromLocal() {
-    const [categories, records, tasks] = await Promise.all([
-        idbGetAll("categories"), idbGetAll("records"), idbGetAll("tasks")
+    const [categories, records, tasks, balanceBase] = await Promise.all([
+        idbGetAll("categories"), idbGetAll("records"), idbGetAll("tasks"), metaGet("balanceBase", { cents: 0, at: 0 })
     ]);
+    state.balanceBase = balanceBase;
     state.categories = categories;
     state.records = records;
     state.tasks = tasks;
@@ -478,7 +485,39 @@ function renderRecordList() {
     });
 }
 
+function currentBalance() {
+    const base = state.balanceBase;
+    return activeRecords().reduce((total, record) => {
+        if (record.createdAt <= base.at) return total;
+        return total + (record.kind === "income" ? record.amountCents : -record.amountCents);
+    }, base.cents);
+}
+
+async function editBalance() {
+    const input = window.prompt("设置当前余额（元）。此后新记的收支将从这个金额开始计算。", (currentBalance() / 100).toFixed(2));
+    if (input === null) return;
+    const value = input.trim();
+    const cents = Number(value.replace(".", "").replace(/^-/, "")) * (value.startsWith("-") ? -1 : 1)
+        * 10 ** (2 - (value.split(".")[1] || "").length);
+    if (!/^-?\d+(?:\.\d{1,2})?$/.test(value) || !Number.isSafeInteger(cents)) {
+        showToast("请输入有效金额，最多两位小数");
+        return;
+    }
+    await metaSet("balanceBase", { cents, at: Date.now() });
+    await refreshFromLocal();
+    renderLedger();
+}
+
+function showBalanceChange(record) {
+    const income = record.kind === "income";
+    const change = el("span", income ? "balance-income" : "balance-expense",
+        (income ? "↑ " : "− ") + formatCents(record.amountCents));
+    $("balanceChanges").appendChild(change);
+    setTimeout(() => change.remove(), 5000);
+}
+
 function renderLedger() {
+    $("balanceAmount").textContent = formatCents(currentBalance());
     renderStats();
     renderRecordList();
 }
@@ -698,6 +737,7 @@ async function addRecord(event) {
     };
 
     await persistEntity("records", record);
+    showBalanceChange(record);
     amountInput.value = "";
     $("note").value = "";
     showToast("已添加");
@@ -858,7 +898,7 @@ function shiftMonth(delta) {
 
 async function exportJson() {
     await refreshFromLocal();
-    const data = { version: 3, exportedAt: new Date().toISOString(), categories: state.categories,
+    const data = { version: 4, balanceBase: state.balanceBase, exportedAt: new Date().toISOString(), categories: state.categories,
         records: activeRecords(), tasks: activeTasks() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -915,7 +955,11 @@ function validateBackup(data) {
             || (item.time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.time))) throw new Error("事项数据无效");
         return { ...common(item), time: item.time || "", done: Boolean(item.done) };
     });
-    return { categories, records, tasks };
+    const balanceBase = data.balanceBase ?? { cents: 0, at: 0 };
+    if (!Number.isSafeInteger(balanceBase.cents) || !Number.isSafeInteger(balanceBase.at) || balanceBase.at < 0) {
+        throw new Error("余额基准无效");
+    }
+    return { categories: categories.concat(EXTRA_EXPENSES.filter(item => !categoryMap.has(item.id))), records, tasks, balanceBase };
 }
 
 async function importJson(file) {
@@ -932,6 +976,7 @@ async function importJson(file) {
             target.clear();
             incoming[store].forEach(item => target.put(item));
         }
+        tx.objectStore("meta").put({ key: "balanceBase", value: incoming.balanceBase });
         tx.objectStore("meta").delete("lastExportAt");
         await completed;
         resetTaskForm();
@@ -949,6 +994,7 @@ async function importJson(file) {
 /* ---------- 绑定 ---------- */
 
 function bindEvents() {
+    $("balanceBtn").addEventListener("click", editBalance);
     document.querySelectorAll(".tab").forEach((tab) => {
         tab.addEventListener("click", () => {
             switchView(tab.dataset.view);
@@ -1021,17 +1067,18 @@ async function bootstrap() {
     $("date").value = todayStr();
     $("taskDate").value = todayStr();
 
-    bindEvents();
+
 
     await openDB();
-    if ((await idbCount("categories")) === 0) {
-        await idbPutMany("categories", DEFAULT_CATEGORIES);
-    }
+    const existing = await idbGetAll("categories");
+    const needed = existing.length ? EXTRA_EXPENSES : DEFAULT_CATEGORIES;
+    await idbPutMany("categories", needed.filter(item => !existing.some(category => category.id === item.id)));
     await refreshFromLocal();
     populateCategories();
     renderAll();
 
 
+    bindEvents();
     registerServiceWorker();
 }
 

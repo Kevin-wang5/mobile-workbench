@@ -837,3 +837,13 @@ input, select { min-height: 46px; font-size: 16px; min-width: 0; }
 .toast { bottom: calc(90px + env(safe-area-inset-bottom)); }
 #backupReminder { color: #a35f12; }
 .field-row > .field { min-width: 0; }
+
+.balance-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#balanceBtn { display: grid; gap: 4px; background: transparent; color: var(--text); border: 0; padding: 4px; text-align: left; cursor: pointer; }
+#balanceAmount { font-size: 28px; font-variant-numeric: tabular-nums; }
+#balanceChanges { display: grid; gap: 3px; }
+#balanceChanges span { font-weight: 700; animation: balance-pop 5s both; }
+.balance-income { color: #137245; }
+.balance-expense { color: #b52f32; }
+@keyframes balance-pop { 0% { opacity: 0; transform: translateY(6px); } 6%, 95% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { #balanceChanges span { animation: none; } }
